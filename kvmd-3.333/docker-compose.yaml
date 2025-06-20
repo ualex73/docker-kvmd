@@ -3,7 +3,7 @@ services:
   pikvm:
     container_name: pikvm
     hostname: pikvm # used in WebGUI
-    image: ualex73/pikvm:3.333-1
+    image: ualex73/kvmd:3.333-1
     restart: unless-stopped
     privileged: true # privileged is required for GPIO
     ports:
