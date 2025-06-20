@@ -1,0 +1,13 @@
+[Unit]
+Description=PiKVM - First, do checks in Docker
+After=systemd-modules-load.service
+Before=kvmd-otg.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/kvmd-first start
+ExecStop=/usr/bin/kvmd-first stop
+RemainAfterExit=true
+
+[Install]
+WantedBy=multi-user.target
