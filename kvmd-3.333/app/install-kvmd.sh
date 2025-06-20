@@ -136,10 +136,6 @@ chmod 440 /etc/sudoers.d/kvmd
 cd /tmp
 cp tc358743-edid.hex /etc/kvmd/tc358743-edid.hex
 
-# Finally put run.sh script in place
-cd /tmp
-cp run.sh /
-
 # Remove other stuff, otherwise systemctl will try to start it
 rm -f /etc/init.d/*
 rm -rf /etc/systemd/system/*
