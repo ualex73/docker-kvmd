@@ -5,8 +5,8 @@
 This repository is a proof-of-concept to run [PiKVM](https://pikvm.org) in Docker on a BliKVM v1 (using Raspberry CM4). The installation procedure was inspired by [srepac](https://github.com/srepac/kvmd-armbian). KVMD is only supported on their ArchLinux and I prefer to run it on Raspberry Pi OS, but the changes in software, configuration, version, etc makes it very prone to errors (where a docker image is static and predictable).
 
 The following kvmd versions are available as Docker container:
-- 3.333
-- 4.85
+- [3.333](https://hub.docker.com/r/ualex73/kvmd/tags?name=3.333)
+- [4.85](https://hub.docker.com/r/ualex73/kvmd/tags?name=4.85)
 
 The following features has been tested:
 - WebGUI
