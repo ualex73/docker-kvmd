@@ -4,9 +4,11 @@
 
 This repository is a proof-of-concept to run [PiKVM](https://pikvm.org) in Docker on a BliKVM v1 (using Raspberry CM4). The installation procedure was inspired by [srepac](https://github.com/srepac/kvmd-armbian). KVMD is only supported on their ArchLinux and I prefer to run it on Raspberry Pi OS, but the changes in software, configuration, version, etc makes it very prone to errors (where a docker image is static and predictable).
 
-**At this moment only kvmd 3.333 has been tested**
+The following kvmd versions are available as Docker container:
+- 3.333
+- 4.85
 
-The following has been tested:
+The following features has been tested:
 - WebGUI
 - OTG (USB devices)
 
@@ -15,7 +17,6 @@ Following services are disabled and not tested (but should work):
 - VNC
 
 To be tested:
-- MSD (mass storage device)
 - KVM switch
 
 ## Requirements
@@ -28,7 +29,7 @@ Run the `install-host.sh` script to update the system with required kernel param
 
 There is normally no external storage/configuration required to run the default installation. Login credentials are admin/admin.
 
-**docker-compose.yaml Example**
+**docker-compose.yaml** Example for kvmd 3.333
 ```
 services:
 
@@ -42,6 +43,22 @@ services:
       - 443:443 # HTTPS
       # 80:80 # HTTP, with redirection
       # 5900:5900 # VNC
+    volumes:
+     - /dev:/dev # Required for USB/Video devices
+     - /sys:/sys # required for USB OTG (keyboard/mouse/msd)
+```
+
+**docker-compose.yaml** Example for kvmd 4.85
+```
+services:
+
+  pikvm:
+    container_name: pikvm
+    hostname: pikvm # used in WebGUI if network_mode is disabled
+    image: ualex73/pikvm:4.85-1
+    restart: unless-stopped
+    network_mode: host # Required for WebRTC
+    privileged: true # privileged is required for GPIO
     volumes:
      - /dev:/dev # Required for USB/Video devices
      - /sys:/sys # required for USB OTG (keyboard/mouse/msd)
@@ -83,14 +100,16 @@ NOTE: filename `/storage.img` in container is hardcoded
 **Question:** Can i customize the /etc/kvmd configuration?  
 **Answer:** Yes. You can mount the file via the volume configuration. For example to overrule the EDID configuration, you can do following steps:
 ```
-            docker cp <container-name>:/etc/kvmd/tc358743-edid.hex ./tc358743-edid.hex
+docker cp <container-name>:/etc/kvmd/tc358743-edid.hex ./tc358743-edid.hex
 ```
-            (modify the file)
-            Add to the `docker-compose.yaml` the following line:
+
+(modify the file)  
+Add to the `docker-compose.yaml` the following line:
 ```
-            - ./tc358743-edid.hex /etc/kvmd/tc358743-edid.hex
+- ./tc358743-edid.hex:/etc/kvmd/tc358743-edid.hex
 ```
-            Restart the container
+
+Restart the container
 
 
 ## Known issues
