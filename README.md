@@ -10,7 +10,7 @@ The following kvmd versions are available as Docker container:
 
 The following features has been tested:
 - WebGUI
-- OTG (USB devices)
+- OTG (keyboard, mouse and mass storage)
 
 Following services are disabled and not tested (but should work):
 - IPMI
