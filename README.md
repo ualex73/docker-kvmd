@@ -7,6 +7,7 @@ This repository is a proof-of-concept to run [PiKVM](https://pikvm.org) (kvmd) i
 The following kvmd versions are available as Docker container:
 - [3.333](https://hub.docker.com/r/ualex73/kvmd/tags?name=3.333)
 - [4.85](https://hub.docker.com/r/ualex73/kvmd/tags?name=4.85)
+- [4.87](https://hub.docker.com/r/ualex73/kvmd/tags?name=4.87)
 
 The following features has been tested:
 - WebGUI
@@ -38,30 +39,44 @@ services:
     hostname: pikvm # used in WebGUI
     image: ualex73/pikvm:3.333-1
     restart: unless-stopped
+    #network_mode: host # not required for MJPEG 
     privileged: true # privileged is required for GPIO
     ports:
       - 443:443 # HTTPS
-      # 80:80 # HTTP, with redirection
-      # 5900:5900 # VNC
+      # - 80:80 # HTTP, with redirection
+      # - 5900:5900 # VNC
     volumes:
      - /dev:/dev # Required for USB/Video devices
      - /sys:/sys # required for USB OTG (keyboard/mouse/msd)
 ```
 
-**docker-compose.yaml** Example for kvmd 4.85
+**docker-compose.yaml** Example for kvmd 4.87
 ```
 services:
 
   pikvm:
     container_name: pikvm
     hostname: pikvm # used in WebGUI if network_mode is disabled
-    image: ualex73/pikvm:4.85-1
+    image: ualex73/pikvm:4.87-1
     restart: unless-stopped
-    network_mode: host # Required for WebRTC
+    network_mode: host # Required for WebRTC, for H264/MJPEG it is not needed
     privileged: true # privileged is required for GPIO
     volumes:
      - /dev:/dev # Required for USB/Video devices
      - /sys:/sys # required for USB OTG (keyboard/mouse/msd)
+
+    # Port(s) are required when "network_mode: host" is not used
+    #ports:
+    #  - 443:443 # HTTPS
+    #  - 80:80 # HTTP, with redirection
+    #  - 5900:5900 # VNC
+
+    # You can set the hostname/ip/iface in the oled screen
+    # this is handy if you do not use "network_mode: host"
+    #environment:
+    # - KVMD_HOSTNAME=ualex73.domain.com
+    # - KVMD_IPADDR=192.168.1.1
+    # - KVMD_IFACE=eth0
 ```
 
 ## Extra's
@@ -107,6 +122,23 @@ docker cp <container-name>:/etc/kvmd/tc358743-edid.hex ./tc358743-edid.hex
 Add to the `docker-compose.yaml` the following line:
 ```
 - ./tc358743-edid.hex:/etc/kvmd/tc358743-edid.hex
+```
+
+***Question:*** Can I change the HTTP and/or HTTPS port from 80/443 to something else?  
+**Answer**:
+Create a file like `nginx-change.yaml`:
+```
+nginx:
+    http:
+        port: 81
+    https:
+        port: 543
+```
+
+Mount it in the volume section like:
+```
+volumes:
+  - ./nginx-change.yaml:/etc/kvmd/override.d/nginx-change.yaml
 ```
 
 Restart the container

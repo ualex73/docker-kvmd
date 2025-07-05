@@ -221,6 +221,7 @@ cp tc358743-edid.hex /etc/kvmd/tc358743-edid.hex
 # ################################################################################
 Title "Removing all existing systemctl commands"
 
+rm -f /etc/rc?.d/?01*
 rm -f /etc/init.d/*
 rm -rf /etc/systemd/system/*
 rm -rf /var/lib/systemd/deb-systemd-helper-enabled/*
@@ -278,6 +279,6 @@ EOF
 # ################################################################################
 # Delete the temp directory
 # ################################################################################
-#rm -rf /tmp/kvmd
+rm -rf /tmp/kvmd
 
 exit 0

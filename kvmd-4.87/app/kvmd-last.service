@@ -1,0 +1,11 @@
+[Unit]
+Description=PiKVM - Last
+After=kvmd.service kvmd-ipmi.service kvmd-webterm.service kvmd-janus-static.service kvmd-janus.service kvmd-vnc.service kvmd-media.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/kvmd-last
+RemainAfterExit=true
+
+[Install]
+WantedBy=multi-user.target

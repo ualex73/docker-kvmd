@@ -1,0 +1,6 @@
+#!/bin/bash
+
+echo "`date` INFO: kvmd-last starting"
+
+/usr/bin/systemctl -t service --state=running | grep '^kvmd' | sed 's/\t/ /g'  | cut -f 1 -d ' '>/tmp/systemctl-kvmd.txt
+

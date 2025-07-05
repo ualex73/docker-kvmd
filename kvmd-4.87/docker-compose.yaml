@@ -1,0 +1,16 @@
+services:
+
+  pikvm:
+    container_name: pikvm
+    hostname: pikvm # used in WebGUI
+    image: ualex73/kvmd:4.85-1
+    restart: unless-stopped
+    privileged: true # privileged is required for GPIO
+    ports:
+      - 443:443 # HTTPS
+      # 80:80 # HTTP, with redirection
+      # 5900:5900 # VNC
+    volumes:
+     - /dev:/dev # Required for USB/Video devices
+     - /sys:/sys # required for USB OTG (keyboard/mouse/msd)
+
