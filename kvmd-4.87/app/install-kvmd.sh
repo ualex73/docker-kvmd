@@ -30,6 +30,7 @@ rm -f /usr/lib/python3.13/EXTERNALLY-MANAGED
 
 # Install 3rd party software
 pip3 install -U async_lru --break-system-packages
+pip3 install -U pyudev --break-system-packages
 
 # ################################################################################
 # *** Install kvmd software ***
@@ -37,7 +38,7 @@ pip3 install -U async_lru --break-system-packages
 Title "Installing kvmd software"
 
 cd /
-FNL=`ls -1 $INSTALLDIR/kvmd-platform-v4mini-hdmi-rpi4-[0-9]*.[0-9]*-*-any.pkg.tar.xz`
+FNL=`ls -1 $INSTALLDIR/kvmd-platform-v4????-hdmi-rpi4-[0-9]*.[0-9]*-*-any.pkg.tar.xz`
 tar xfJ $FNL
 [ $? -ne 0 ] && exit 1
 
@@ -100,8 +101,8 @@ Title "Applying configuration"
 
 cp /etc/kvmd/main.yaml /etc/kvmd/main.yaml.orig
 cp /usr/share/kvmd/configs.default/kvmd/main/v4mini-hdmi-rpi4.yaml /etc/kvmd/main.yaml
-cp /etc/kvmd/tc358743-edid.hex /etc/kvmd/tc358743-edid.hex.orig
-cp /usr/share/kvmd/configs.default/kvmd/edid/v4plus.hex /etc/kvmd/tc358743-edid.hex
+#cp /etc/kvmd/tc358743-edid.hex /etc/kvmd/tc358743-edid.hex.orig
+#cp /usr/share/kvmd/configs.default/kvmd/edid/v4plus.hex /etc/kvmd/tc358743-edid.hex
 cd /etc/kvmd/nginx/ssl
 openssl ecparam -out server.key -name prime256v1 -genkey
 openssl req -new -x509 -sha256 -nodes -key server.key -out server.crt -days 3650 -subj /C=US/ST=Denial/L=Denial/O=Pi-KVM/OU=Pi-KVM/CN=kvmd-pi
@@ -135,8 +136,8 @@ kvmd:
 EOF
 
 # Overrule default edid.hex with our own
-cd $INSTALLDIR
-cp tc358743-edid.hex /etc/kvmd/tc358743-edid.hex
+#cd $INSTALLDIR
+#cp tc358743-edid.hex /etc/kvmd/tc358743-edid.hex
 
 ln -sf /usr/share/tesseract-ocr/5/tessdata /usr/share/tessdata
 
@@ -258,9 +259,6 @@ echo 'kvmd ALL=(ALL) NOPASSWD: ALL' >/etc/sudoers.d/kvmd
 echo 'kvmd-webterm ALL=(ALL) NOPASSWD: ALL' >>/etc/sudoers.d/kvmd
 chmod 440 /etc/sudoers.d/kvmd
 
-cd $INSTALLDIR
-cp tc358743-edid.hex /etc/kvmd/tc358743-edid.hex
-
 # ################################################################################
 # Remove other stuff, otherwise systemctl will try to start it
 # ################################################################################
@@ -286,6 +284,7 @@ systemctl enable kvmd-webterm.service
 systemctl enable kvmd-tc358743.service
 systemctl enable kvmd-janus.service
 systemctl enable kvmd-media.service
+systemctl enable kvmd-localhid.service
 systemctl enable kvmd.service
 
 # Install custom services to fix docker issues

@@ -215,7 +215,6 @@ chmod 440 /etc/sudoers.d/kvmd
 cd $INSTALLDIR
 cp tc358743-edid.hex /etc/kvmd/tc358743-edid.hex
 
-
 # ################################################################################
 # Remove other stuff, otherwise systemctl will try to start it
 # ################################################################################
