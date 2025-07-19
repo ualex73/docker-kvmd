@@ -248,6 +248,9 @@ sed -i "s/g kvmd - -/g kvmd 900 -/" /usr/lib/sysusers.d/kvmd.conf
 systemd-sysusers /usr/lib/sysusers.d/kvmd.conf
 systemd-sysusers /usr/lib/sysusers.d/kvmd-webterm.conf
 
+# Add dialout to kvmd user
+usermod -a -G dialout kvmd
+
 mkdir -p /home/kvmd-webterm
 chown kvmd-webterm /home/kvmd-webterm
 chown kvmd:kvmd /etc/kvmd/htpasswd

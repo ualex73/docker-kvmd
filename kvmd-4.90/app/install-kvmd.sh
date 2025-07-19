@@ -1,9 +1,12 @@
 #!/bin/bash
+# set -x
 
 INSTALLDIR=/tmp/kvmd
 
 # kvmd 3.333 only support Python 3.11
 # kvmd 4.85  only supports Python 3.13
+# kvmd 4.87  only supports Python 3.13
+# kvmd 4.90  only supports Python 3.13
 
 # based on following github:
 # https://github.com/srepac/kvmd-armbian
@@ -24,10 +27,11 @@ Title() {
 # ################################################################################
 # ################################################################################
 # Remove pip3 restrictions
-rm -f /usr/lib/python3.11/EXTERNALLY-MANAGED
+rm -f /usr/lib/python3.13/EXTERNALLY-MANAGED
 
 # Install 3rd party software
 pip3 install -U async_lru --break-system-packages
+pip3 install -U pyudev --break-system-packages
 
 # ################################################################################
 # *** Install kvmd software ***
@@ -35,33 +39,61 @@ pip3 install -U async_lru --break-system-packages
 Title "Installing kvmd software"
 
 cd /
-tar xfJ $INSTALLDIR/kvmd-platform-v4mini-hdmi-rpi4-3.333-1-any.pkg.tar.xz
-tar xfJ $INSTALLDIR/kvmd-3.333-1-any.pkg.tar.xz
-tar xfJ $INSTALLDIR/kvmd-webterm-0.48-1-any.pkg.tar.xz
-tar xfJ $INSTALLDIR/kvmd-oled-0.26-1-any.pkg.tar.xz
+FNL=`ls -1 $INSTALLDIR/kvmd-platform-v4????-hdmi-rpi4-[0-9]*.[0-9]*-*-any.pkg.tar.xz`
+tar xfJ $FNL
+[ $? -ne 0 ] && exit 1
+
+FNL=`ls -1 $INSTALLDIR/kvmd-[0-9]*.[0-9]*-*-any.pkg.tar.xz`
+tar xfJ $FNL
+[ $? -ne 0 ] && exit 1
+
+FNL=`ls -1 $INSTALLDIR/janus-gateway-pikvm-[0-9]*-*-armv7h.pkg.tar.xz`
+tar xfJ $FNL
+[ $? -ne 0 ] && exit 1
+
+FNL=`ls -1 $INSTALLDIR/kvmd-webterm-[0-9]*.[0-9]*-*-any.pkg.tar.xz`
+tar xfJ $FNL
+[ $? -ne 0 ] && exit 1
 
 # ################################################################################
 # *** Create python links of kvmd ***
 # ################################################################################
-# Create python links
 ln -sf /usr/bin/python3 /usr/bin/python
-ln -sf /usr/lib/python3.11/site-packages/kvmd /usr/lib/python3/dist-packages
+ln -sf /usr/lib/python3.13/site-packages/kvmd /usr/lib/python3/dist-packages
 
 # ################################################################################
-# Fix KVM Switch
+# Add environment variables to kvmd-oled
 # ################################################################################
-# Fix xk_hk4401, otherwise it does not support the kvm-switch v2
-cd $INSTALLDIR
-cp xh_hk4401.py /usr/lib/python3.11/site-packages/kvmd/plugins/ugpio/xh_hk4401.py
-
-# ################################################################################
-# Fix OLED
-# ################################################################################
-mkdir -p /usr/share/fonts/TTF
-wget -q -O /usr/share/fonts/TTF/ProggySquare.ttf https://fontsfree.net/wp-content/fonts/bitmap/pixel-bitmap/FontsFree-Net-ProggySquare.ttf
 
 # Fix rotation for BliKVM v1
-sed -i 's/"rotate": 2/"rotate": 0/' /usr/bin/kvmd-oled
+sed -i 's/return {"height": 64, "rotate": [0,2]}/return {"height": 64, "rotate": 0}/' /usr/lib/python3.13/site-packages/kvmd/apps/oled/__init__.py
+[ $? -ne 0 ] && exit 1
+
+# Check sum, before we modify it
+SUM=`cat /usr/lib/python3.13/site-packages/kvmd/apps/oled/sensors.py | sum`
+if [ "$SUM" != "60378     5" ]; then
+  echo "ERROR: kvmd/apps/oled/sensors.py has different checksum ('$SUM' vs '60378     5')"
+  exit 1
+fi
+
+cp -p /usr/lib/python3.13/site-packages/kvmd/apps/oled/sensors.py /usr/lib/python3.13/site-packages/kvmd/apps/oled/sensors.py.org
+
+# Add "import os"
+sed -i 's/import socket/import os\nimport socket/' /usr/lib/python3.13/site-packages/kvmd/apps/oled/sensors.py
+[ $? -ne 0 ] && exit 1
+
+# Fix the interface name
+sed -i 's/return self.__get_netconf(round(time.monotonic() \/ 0.3))\[0\]/return os.getenv("KVMD_IFACE", default=self.__get_netconf(round(time.monotonic() \/ 0.3))\[0\])/' /usr/lib/python3.13/site-packages/kvmd/apps/oled/sensors.py
+[ $? -ne 0 ] && exit 1
+
+# Fix the ip address
+sed -i 's/return self.__get_netconf(round(time.monotonic() \/ 0.3))\[1\]/return os.getenv("KVMD_IPADDR", default=self.__get_netconf(round(time.monotonic() \/ 0.3))\[1\])/' /usr/lib/python3.13/site-packages/kvmd/apps/oled/sensors.py
+[ $? -ne 0 ] && exit 1
+
+# Fix the hostname
+sed -i 's/    def __get_iface(self) -> str:/    def __get_hostname(self) -> str:\n        return os.getenv("KVMD_HOSTNAME", default=socket.getfqdn())\n\n    def __get_iface(self) -> str:/' /usr/lib/python3.13/site-packages/kvmd/apps/oled/sensors.py
+sed -i 's/socket\.getfqdn,/self.__get_hostname,/' /usr/lib/python3.13/site-packages/kvmd/apps/oled/sensors.py
+[ $? -ne 0 ] && exit 1
 
 # ################################################################################
 # Copy configuration
@@ -70,8 +102,8 @@ Title "Applying configuration"
 
 cp /etc/kvmd/main.yaml /etc/kvmd/main.yaml.orig
 cp /usr/share/kvmd/configs.default/kvmd/main/v4mini-hdmi-rpi4.yaml /etc/kvmd/main.yaml
-cp /etc/kvmd/tc358743-edid.hex /etc/kvmd/tc358743-edid.hex.orig
-cp /usr/share/kvmd/configs.default/kvmd/edid/v4plus.hex /etc/kvmd/tc358743-edid.hex
+#cp /etc/kvmd/tc358743-edid.hex /etc/kvmd/tc358743-edid.hex.orig
+#cp /usr/share/kvmd/configs.default/kvmd/edid/v4plus.hex /etc/kvmd/tc358743-edid.hex
 cd /etc/kvmd/nginx/ssl
 openssl ecparam -out server.key -name prime256v1 -genkey
 openssl req -new -x509 -sha256 -nodes -key server.key -out server.crt -days 3650 -subj /C=US/ST=Denial/L=Denial/O=Pi-KVM/OU=Pi-KVM/CN=kvmd-pi
@@ -104,7 +136,19 @@ kvmd:
 
 EOF
 
+# Overrule default edid.hex with our own
+#cd $INSTALLDIR
+#cp tc358743-edid.hex /etc/kvmd/tc358743-edid.hex
+
 ln -sf /usr/share/tesseract-ocr/5/tessdata /usr/share/tessdata
+
+# Hack OTG, otherwise MSD will not work
+sed -i "/inquiry_string_cdrom: str,/d" /usr/lib/python3.13/site-packages/kvmd/apps/otg/__init__.py
+sed -i "/inquiry_string_flash: str,/d" /usr/lib/python3.13/site-packages/kvmd/apps/otg/__init__.py
+sed -i "/inquiry_string_cdrom=/d" /usr/lib/python3.13/site-packages/kvmd/apps/otg/__init__.py
+sed -i "/inquiry_string_flash=/d" /usr/lib/python3.13/site-packages/kvmd/apps/otg/__init__.py
+sed -i '/_write(join(func_path, "lun.0\/inquiry_string_cdrom")/d' /usr/lib/python3.13/site-packages/kvmd/apps/otg/__init__.py
+sed -i '/_write(join(func_path, "lun.0\/inquiry_string")/d' /usr/lib/python3.13/site-packages/kvmd/apps/otg/__init__.py
 
 # ################################################################################
 # Copy compiled ttyd to right location
@@ -158,39 +202,44 @@ make install
 ln -sf /usr/local/bin/ustreamer /usr/local/bin/ustreamer-dump /usr/bin/
 mkdir -p /usr/lib/ustreamer/janus
 cp janus/libjanus_ustreamer.so /usr/lib/ustreamer/janus
+cp python/root/usr/local/lib/python3.13/dist-packages/ustreamer.cpython-313-aarch64-linux-gnu.so /usr/lib/python3/dist-packages/
 
 cd $INSTALLDIR
 rm -rf $FNS
 
 # ################################################################################
-# Compile libgpio v2, required for pikvm 3.292+
+# *** Compile janus ***
 # ################################################################################
-Title "Installing libgpio v2"
+Title "Installing Janus WebRTC"
 
 cd $INSTALLDIR
-FNL=`ls -1 libgpiod-*.tar.gz`
+FNL=`ls -1 janus-gateway-*.tar.gz`
 FNS=`echo $FNL | sed "s/\.tar\.gz//"`
 
 tar xfz $FNL
 [ $? -ne 0 ] && exit 1
 cd $FNS
 [ $? -ne 0 ] && exit 1
-./autogen.sh --enable-tools=yes --enable-bindings-python=yes --prefix=/usr
+sh autogen.sh
 [ $? -ne 0 ] && exit 1
-make install
+./configure --prefix=/usr
 [ $? -ne 0 ] && exit 1
+make
+[ $? -ne 0 ] && exit 1
+# Only copy single binary, nothing else
+cp src/janus /usr/bin/janus
+rm -f /usr/lib/janus/transports/*
+cp src/transports/.libs/libjanus_websockets.so.2.0.6 /usr/lib/janus/transports/
+ln -s /usr/lib/janus/transports/libjanus_websockets.so.2.0.6 /usr/lib/janus/transports/libjanus_websockets.so.2
+ln -s /usr/lib/janus/transports/libjanus_websockets.so.2.0.6 /usr/lib/janus/transports/libjanus_websockets.so
 
 cd $INSTALLDIR
 rm -rf $FNS
 
-#get rid of this line, otherwise kvmd-nginx won't start properly since the nginx version is not 1.25 and higher
-sed -i -e '/http2 on;/d' /usr/bin/kvmd-nginx-mkconf /etc/kvmd/nginx/nginx.conf.mako
-
- ################################################################################
+# ################################################################################
 # *** Create users/groups/sudo and fix permissions
 # ################################################################################
 Title "Creating users/groups/sudo"
-
 mkdir /tmp/kvmd-nginx
 mkdir /run/kvmd
 chmod a+rwx /run/kvmd
@@ -213,10 +262,6 @@ chown kvmd:kvmd /etc/kvmd/totp.secret
 echo 'kvmd ALL=(ALL) NOPASSWD: ALL' >/etc/sudoers.d/kvmd
 echo 'kvmd-webterm ALL=(ALL) NOPASSWD: ALL' >>/etc/sudoers.d/kvmd
 chmod 440 /etc/sudoers.d/kvmd
-
-# Overrule default edid.hex with our own
-cd $INSTALLDIR
-cp tc358743-edid.hex /etc/kvmd/tc358743-edid.hex
 
 # ################################################################################
 # Remove other stuff, otherwise systemctl will try to start it
@@ -242,6 +287,8 @@ systemctl enable kvmd-nginx.service
 systemctl enable kvmd-webterm.service
 systemctl enable kvmd-tc358743.service
 systemctl enable kvmd-janus.service
+systemctl enable kvmd-media.service
+systemctl enable kvmd-localhid.service
 systemctl enable kvmd.service
 
 # Install custom services to fix docker issues
@@ -265,11 +312,23 @@ sed -i 's/cat \/etc\/motd/armbian-motd/g' /lib/systemd/system/kvmd-webterm.servi
 # Install extras stub file for e.g. terminal
 # ################################################################################
 cd $INSTALLDIR
-cp extras_stub.py /usr/lib/python3.11/site-packages/kvmd/apps/kvmd/info/
+cp extras_stub.py /usr/lib/python3.13/site-packages/kvmd/apps/kvmd/info/
 
 # Modify extras.py file to execute the stub code
-cp -p /usr/lib/python3.11/site-packages/kvmd/apps/kvmd/info/extras.py /usr/lib/python3.11/site-packages/kvmd/apps/kvmd/info/extras.py.bak
-sed -i '/async def get_state/a \        from .extras_stub import extras_stub_list\n        return extras_stub_list()' /usr/lib/python3.11/site-packages/kvmd/apps/kvmd/info/extras.py
+cp -p /usr/lib/python3.13/site-packages/kvmd/apps/kvmd/info/extras.py /usr/lib/python3.13/site-packages/kvmd/apps/kvmd/info/extras.py.bak
+sed -i '/async def get_state/a \        from .extras_stub import extras_stub_list\n        return extras_stub_list()' /usr/lib/python3.13/site-packages/kvmd/apps/kvmd/info/extras.py
+
+# ################################################################################
+# vcgencmd binary is mandatory, dirty hack to copy it
+# ################################################################################
+cd $INSTALLDIR
+cp vcgencmd /usr/bin/vcgencmd
+
+# ################################################################################
+# Fix Janus ws-socket permissions, that group has also write access
+# ################################################################################
+cd $INSTALLDIR
+cp kvmd-janus /usr/bin/kvmd-janus
 
 # ################################################################################
 # Add a dummy file to /etc/fstab for MSD support

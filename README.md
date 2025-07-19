@@ -8,17 +8,16 @@ The following kvmd versions are available as Docker container:
 - [3.333](https://hub.docker.com/r/ualex73/kvmd/tags?name=3.333)
 - [4.85](https://hub.docker.com/r/ualex73/kvmd/tags?name=4.85)
 - [4.87](https://hub.docker.com/r/ualex73/kvmd/tags?name=4.87)
+- [4.90](https://hub.docker.com/r/ualex73/kvmd/tags?name=4.90)
 
 The following features has been tested:
 - WebGUI
 - OTG (keyboard, mouse and mass storage)
+- KVM switch
 
 Following services are disabled and not tested (but should work):
 - IPMI
 - VNC
-
-To be tested:
-- KVM switch
 
 ## Requirements
 
@@ -50,14 +49,14 @@ services:
      - /sys:/sys # required for USB OTG (keyboard/mouse/msd)
 ```
 
-**docker-compose.yaml** Example for kvmd 4.87
+**docker-compose.yaml** Example for kvmd 4.90
 ```
 services:
 
   pikvm:
     container_name: pikvm
     hostname: pikvm # used in WebGUI if network_mode is disabled
-    image: ualex73/pikvm:4.87-1
+    image: ualex73/pikvm:4.90-1
     restart: unless-stopped
     network_mode: host # Required for WebRTC, for H264/MJPEG it is not needed
     privileged: true # privileged is required for GPIO
@@ -143,6 +142,14 @@ volumes:
 
 Restart the container
 
+***Question:*** Can I install signed certificates?  
+**Answer**:
+Create the CER/PEM file and the private key and mount them as follows:
+```
+volumes:
+  - ./fullchain.pem:/etc/kvmd/nginx/server.crt
+  - ./privkey.pem:/etc/kvmd/nginx/server.key
+```
 
 ## Known issues
 
