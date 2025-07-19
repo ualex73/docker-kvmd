@@ -147,8 +147,8 @@ Restart the container
 Create the CER/PEM file and the private key and mount them as follows:
 ```
 volumes:
-  - ./fullchain.pem:/etc/kvmd/nginx/server.crt
-  - ./privkey.pem:/etc/kvmd/nginx/server.key
+  - ./fullchain.pem:/etc/kvmd/nginx/ssl/server.crt
+  - ./privkey.pem:/etc/kvmd/nginx/ssl/server.key
 ```
 
 ## Known issues
