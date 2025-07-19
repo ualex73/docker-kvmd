@@ -123,7 +123,7 @@ Add to the `docker-compose.yaml` the following line:
 - ./tc358743-edid.hex:/etc/kvmd/tc358743-edid.hex
 ```
 
-***Question:*** Can I change the HTTP and/or HTTPS port from 80/443 to something else?  
+**Question:** Can I change the HTTP and/or HTTPS port from 80/443 to something else?  
 **Answer**:
 Create a file like `nginx-change.yaml`:
 ```
@@ -142,7 +142,7 @@ volumes:
 
 Restart the container
 
-***Question:*** Can I install signed certificates?  
+**Question:** Can I install signed certificates?  
 **Answer**:
 Create the CER/PEM file and the private key and mount them as follows:
 ```
