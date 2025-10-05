@@ -1,0 +1,33 @@
+#!/bin/bash
+
+echo "`date` INFO: kvmd-first starting"
+
+# Fix permissions, because host and container permission will be different
+chmod a+rw /dev/gpio*
+chmod a+rw /dev/spi*
+
+# Change hostname for kvmd GUI
+sed -i -e "s/    host: .*/    host: $HOSTNAME/g" /etc/kvmd/meta.yaml
+
+# Delete temporary extras file, need to be deleted at each start
+rm -f /tmp/systemctl-kvmd.txt
+
+# Check kvmd-otg, otherwise it can give an error
+# if /sys/kernel/config/usb_gadget/kvmd then skip
+# if ! /sys/kernel/config/usb_gadget/kvmd then rm /run/kvmd/otg
+
+if [ ! -d "/sys/kernel/config/usb_gadget/kvmd" ]; then
+  if [ -d "/run/kvmd/otg" ]; then
+    echo "`date` WARN: USB gadget is NOT enabled, but /run/kvmd/otg exist ... Deleting it"
+    rm -rf /run/kvmd/otg
+  fi
+fi
+
+# NOTE: in kvmd 3.333 we stop kvmd-otg, but this does not seem to work with 4.xx
+
+# Check if /storage.img exist, then run a mount. Otherwise the kvmd will fail
+if [ -f "/storage.img" ]; then
+  mount -a
+fi
+
+exit 0
