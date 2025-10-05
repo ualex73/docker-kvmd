@@ -10,6 +10,15 @@ else
   BOOTCONF="/boot/config.txt"
 fi
 
+# Check if otg is disabled, otherwise kvmd-otg will not started
+grep "^otg_mode=" $BOOTCONF
+if [ $? -eq 1 ]; then
+  echo "INFO: Disabled otg_mode in $BOOTCONF ..."
+  sed -i "s/otg_mode=/#otg_mode=/" $BOOTCONF
+else
+  echo "WARN: Not disabling otg_mode in $BOOTCONF, they seem to disabled already ..."
+fi
+
 grep -q "# Custom PiKVM" $BOOTCONF
 if [ $? -eq 1 ]; then 
   echo "INFO: Adding entries to $BOOTCONF ..."
@@ -65,8 +74,6 @@ fi
 
 echo "INFO: Creating /etc/udev/rules.d/99-kvmd.rules"
 cat <<EOF >/etc/udev/rules.d/99-kvmd.rules 
-# https://unix.stackexchange.com/questions/66901/how-to-bind-usb-device-under-a-static-name
-# https://wiki.archlinux.org/index.php/Udev#Setting_static_device_names
 KERNEL=="video[0-9]*", SUBSYSTEM=="video4linux", KERNELS=="fe801000.csi|fe801000.csi1", ATTR{name}=="unicam-image", GROUP="kvmd", SYMLINK+="kvmd-video", TAG+="systemd"
 KERNEL=="hidg0", GROUP="kvmd", SYMLINK+="kvmd-hid-keyboard"
 KERNEL=="hidg1", GROUP="kvmd", SYMLINK+="kvmd-hid-mouse"
