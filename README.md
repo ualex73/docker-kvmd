@@ -9,6 +9,7 @@ The following kvmd versions are available as Docker container:
 - [4.85](https://hub.docker.com/r/ualex73/kvmd/tags?name=4.85)
 - [4.87](https://hub.docker.com/r/ualex73/kvmd/tags?name=4.87)
 - [4.90](https://hub.docker.com/r/ualex73/kvmd/tags?name=4.90)
+- [4.124](https://hub.docker.com/r/ualex73/kvmd/tags?name=4.124)
 
 The following features has been tested:
 - WebGUI
@@ -49,14 +50,14 @@ services:
      - /sys:/sys # required for USB OTG (keyboard/mouse/msd)
 ```
 
-**docker-compose.yaml** Example for kvmd 4.90
+**docker-compose.yaml** Example for kvmd 4.124
 ```
 services:
 
   pikvm:
     container_name: pikvm
     hostname: pikvm # used in WebGUI if network_mode is disabled
-    image: ualex73/pikvm:4.90-1
+    image: ualex73/pikvm:4.124-1
     restart: unless-stopped
     network_mode: host # Required for WebRTC, for H264/MJPEG it is not needed
     privileged: true # privileged is required for GPIO

@@ -1,0 +1,38 @@
+services:
+
+  pikvm:
+    container_name: pikvm
+    hostname: pikvm # used in WebGUI
+    image: ualex73/kvmd:4.124-1
+    restart: unless-stopped
+    #network_mode: host # Required for WebRTC, for H264/MJPEG it is not needed
+    privileged: true # privileged is required for GPIO
+    ports:
+      - 443:443 # HTTPS
+      # 80:80 # HTTP, with redirection
+      # 5900:5900 # VNC
+    volumes:
+     - /dev:/dev # Required for USB/Video devices
+     - /sys:/sys # required for USB OTG (keyboard/mouse/msd)
+
+    # Storage for ISP files: 
+    # - ./msd.yaml:/etc/kvmd/override.d/msd.yaml
+    # - ./storage.img:/storage.img
+
+    # Override tc358743.hex file, for display setting:
+    # - ./tc358743-edid.hex:/etc/kvmd/tc358743-edid.hex
+
+    # Override nginx port(s):
+    # - ./nginx-change.yaml:/etc/kvmd/override.d/nginx-change.yaml
+
+    # Override self-signed certificates:
+    # - ./fullchain.pem:/etc/kvmd/nginx/ssl/server.crt
+    # - ./privkey.pem:/etc/kvmd/nginx/ssl/server.key
+
+    # You can set the hostname/ip/iface in the oled screen
+    # this is handy if you do not use "network_mode: host"
+    #environment:
+    # - KVMD_HOSTNAME=ualex73.domain.com
+    # - KVMD_IPADDR=192.168.1.1
+    # - KVMD_IFACE=eth0
+
