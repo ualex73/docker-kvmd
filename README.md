@@ -9,6 +9,7 @@ The following kvmd versions are available as Docker container:
 - [4.85](https://hub.docker.com/r/ualex73/kvmd/tags?name=4.85)
 - [4.87](https://hub.docker.com/r/ualex73/kvmd/tags?name=4.87)
 - [4.90](https://hub.docker.com/r/ualex73/kvmd/tags?name=4.90)
+- [4.100](https://hub.docker.com/r/ualex73/kvmd/tags?name=4.100)
 - [4.124](https://hub.docker.com/r/ualex73/kvmd/tags?name=4.124)
 
 The following features has been tested:
